@@ -1,0 +1,390 @@
+openapi: 3.0.3
+info:
+  title: Thred API
+  description: API for generating AI responses with brand enrichment
+  version: 1.0.0
+  contact:
+    name: Thred API Support
+servers:
+  - url: https://api.thred.dev/v1
+    description: Production server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /answer:
+    post:
+      summary: Generate AI response with brand enrichment
+      description: Generates a complete AI response with brand enrichment. Returns the full response after processing.
+      operationId: generateAnswer
+      tags:
+        - Answer
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequest'
+            examples:
+              basicRequest:
+                summary: Basic request
+                value:
+                  message: "What's the best way to organize my tasks?"
+                  model: "gpt-4"
+              enrichedRequest:
+                summary: Request with instructions and conversation ID
+                value:
+                  message: "How can I improve my productivity?"
+                  model: "gpt-4"
+                  instructions: "Be concise and practical"
+                  conversationId: "conv_12345"
+                  customerId: "cust_67890"
+      responses:
+        '200':
+          description: Successfully generated response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnswerResponse'
+              examples:
+                withBrand:
+                  summary: Response with brand enrichment
+                  value:
+                    response: "To improve your productivity, consider using a task management tool like TaskMaster. It helps you organize your work efficiently."
+                    model: "gpt-4"
+                    brandUsed:
+                      id: "brand_123"
+                      name: "TaskMaster"
+                      domain: "taskmaster.com"
+                    link: "https://thred.click/fRtW2z"
+                    similarityScore: 0.92
+                    triggerPhrases:
+                      - "task management"
+                      - "productivity tool"
+                    matchedTriggers:
+                      - "task management"
+                withoutBrand:
+                  summary: Response without brand enrichment
+                  value:
+                    response: "To improve your productivity, try breaking tasks into smaller chunks and taking regular breaks."
+                    model: "gpt-4"
+                    brandUsed: null
+        '400':
+          description: Bad request - missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Message is required"
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authorization header is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Failed to generate response"
+                message: "OpenAI API error"
+
+  /answer/stream:
+    post:
+      summary: Generate streaming AI response with brand enrichment
+      description: |
+        Generates a streaming AI response with brand enrichment. Returns the response as a text stream,
+        followed by metadata in JSON format after two newlines.
+        
+        The stream format is:
+        1. Text content (streamed)
+        2. Two newlines
+        3. JSON metadata object containing brand information and links
+        
+        Brand metadata is also included in response headers (X-Brand-Id, X-Brand-Name, X-Brand-Domain, X-Similarity-Score).
+      operationId: generateAnswerStream
+      tags:
+        - Answer
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnswerRequest'
+            examples:
+              basicRequest:
+                summary: Basic streaming request
+                value:
+                  message: "What's the best way to organize my tasks?"
+                  model: "gpt-4"
+              enrichedRequest:
+                summary: Streaming request with instructions
+                value:
+                  message: "How can I improve my productivity?"
+                  model: "gpt-4"
+                  instructions: "Be concise and practical"
+                  conversationId: "conv_12345"
+      responses:
+        '200':
+          description: Successfully streaming response
+          headers:
+            Content-Type:
+              schema:
+                type: string
+                default: "text/plain; charset=utf-8"
+              description: Content type for streaming response
+            Cache-Control:
+              schema:
+                type: string
+                default: "no-cache"
+              description: Disable caching for streaming
+            Connection:
+              schema:
+                type: string
+                default: "keep-alive"
+              description: Keep connection alive for streaming
+            X-Brand-Id:
+              schema:
+                type: string
+              description: ID of the brand used in enrichment (if applicable)
+              example: "brand_123"
+            X-Brand-Name:
+              schema:
+                type: string
+              description: Name of the brand used in enrichment (if applicable)
+              example: "TaskMaster"
+            X-Brand-Domain:
+              schema:
+                type: string
+              description: Domain of the brand used in enrichment (if applicable)
+              example: "taskmaster.com"
+            X-Similarity-Score:
+              schema:
+                type: string
+              description: Similarity score for brand match (if applicable)
+              example: "0.92"
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: |
+                  Streaming text response followed by metadata.
+                  Format: [text content]\n\n[JSON metadata]
+              example: |
+                To improve your productivity, consider using a task management tool like TaskMaster. It helps you organize your work efficiently.
+
+                {"_metadata":{"brandUsed":{"id":"brand_123","name":"TaskMaster","domain":"taskmaster.com"},"link":"https://thred.click/fRtW2z","code":"abc123","similarityScore":0.92,"triggerPhrases":["task management","productivity tool"],"matchedTriggers":["task management"]}}
+        '400':
+          description: Bad request - missing or invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Message is required"
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Unauthorized"
+                message: "Authorization header is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Failed to generate streaming response"
+                message: "OpenAI API error"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        API key authentication using Bearer token.
+        Include your API key in the Authorization header as: `Bearer YOUR_API_KEY`
+
+  schemas:
+    AnswerRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: The user's message or question to process
+          example: "What's the best way to organize my tasks?"
+          minLength: 1
+        model:
+          type: string
+          description: The OpenAI model to use for generation
+          default: "gpt-4"
+          example: "gpt-4"
+          enum:
+            - "gpt-4"
+            - "gpt-4-turbo"
+            - "gpt-3.5-turbo"
+        maxTokens:
+          type: integer
+          description: Maximum number of tokens to generate (overridden by brand settings)
+          minimum: 1
+          maximum: 4000
+          example: 500
+        temperature:
+          type: number
+          description: Sampling temperature (overridden by brand settings)
+          minimum: 0
+          maximum: 2
+          default: 0.7
+          example: 0.7
+        instructions:
+          type: string
+          description: Additional instructions for the AI response
+          example: "Be concise and practical"
+        conversationId:
+          type: string
+          description: ID to track conversation context
+          example: "conv_12345"
+        customerId:
+          type: string
+          description: ID of the customer making the request
+          example: "cust_67890"
+        isTest:
+          type: boolean
+          description: Whether this is a test request
+          default: false
+          example: false
+
+    AnswerResponse:
+      type: object
+      required:
+        - response
+        - model
+      properties:
+        response:
+          type: string
+          description: The generated AI response with brand enrichment
+          example: "To improve your productivity, consider using a task management tool like TaskMaster."
+        model:
+          type: string
+          description: The model used for generation
+          example: "gpt-4"
+        brandUsed:
+          $ref: '#/components/schemas/BrandInfo'
+        link:
+          type: string
+          format: uri
+          description: Affiliate or tracking link for the brand (if applicable)
+          example: "https://thred.click/fRtW2z"
+        similarityScore:
+          type: number
+          format: float
+          description: Similarity score for brand matching (0-1)
+          minimum: 0
+          maximum: 1
+          example: 0.92
+        triggerPhrases:
+          type: array
+          items:
+            type: string
+          description: List of trigger phrases configured for the brand
+          example: ["task management", "productivity tool"]
+        matchedTriggers:
+          type: array
+          items:
+            type: string
+          description: List of trigger phrases that matched in the user's message
+          example: ["task management"]
+
+    BrandInfo:
+      type: object
+      nullable: true
+      description: Information about the brand used in enrichment
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the brand
+          example: "brand_123"
+        name:
+          type: string
+          description: Name of the brand
+          example: "TaskMaster"
+        domain:
+          type: string
+          description: Domain of the brand's website
+          example: "taskmaster.com"
+
+    StreamMetadata:
+      type: object
+      description: Metadata returned at the end of the stream
+      properties:
+        _metadata:
+          type: object
+          properties:
+            brandUsed:
+              $ref: '#/components/schemas/BrandInfo'
+            link:
+              type: string
+              format: uri
+              description: Affiliate or tracking link for the brand
+              example: "https://thred.click/fRtW2z"
+            code:
+              type: string
+              description: Tracking code for the action
+              example: "abc123"
+            similarityScore:
+              type: number
+              format: float
+              description: Similarity score for brand matching
+              example: 0.92
+            triggerPhrases:
+              type: array
+              items:
+                type: string
+              description: List of trigger phrases configured for the brand
+              example: ["task management", "productivity tool"]
+            matchedTriggers:
+              type: array
+              items:
+                type: string
+              description: List of trigger phrases that matched
+              example: ["task management"]
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error type or category
+          example: "Failed to generate response"
+        message:
+          type: string
+          description: Detailed error message
+          example: "OpenAI API key not configured"
+
+tags:
+  - name: Answer
+    description: AI response generation with brand enrichment
+

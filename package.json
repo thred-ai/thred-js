@@ -1,0 +1,47 @@
+{
+  "name": "@thred/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for the Thred API - AI response generation with brand enrichment",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "thred",
+    "ai",
+    "api",
+    "sdk",
+    "typescript",
+    "brand-enrichment",
+    "openai"
+  ],
+  "author": "Thred API Support",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thred/thred-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thred/thred-sdk/issues"
+  },
+  "homepage": "https://thred.dev",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+
