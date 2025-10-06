@@ -1,7 +1,7 @@
 {
-  "name": "@thred/sdk",
-  "version": "1.0.0",
-  "description": "TypeScript SDK for the Thred API - AI response generation with brand enrichment",
+  "name": "@thred-apps/thred-js",
+  "version": "1.0.2",
+  "description": "TypeScript SDK for the Thred API",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -29,12 +29,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/thred/thred-sdk.git"
+    "url": "git+https://github.com/thred-ai/thred-js.git"
   },
   "bugs": {
-    "url": "https://github.com/thred/thred-sdk/issues"
+    "url": "https://github.com/thred-ai/thred-js/issues"
   },
-  "homepage": "https://thred.dev",
+  "homepage": "https://thred.ai",
   "devDependencies": {
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
@@ -44,4 +44,3 @@
     "node": ">=16.0.0"
   }
 }
-
