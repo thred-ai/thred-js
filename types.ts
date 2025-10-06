@@ -15,12 +15,7 @@ export type BrandInfo = {
   domain: string;
 } | null;
 
-/**
- * Request payload for generating an AI response
- */
-export type AnswerRequest = {
-  /** The user's message or question to process */
-  message: string;
+export type AnswerRequestOptions = {
   /** The OpenAI model to use for generation */
   model?: "gpt-4" | "gpt-4-turbo" | "gpt-3.5-turbo";
   /** Maximum number of tokens to generate (overridden by brand settings) */
@@ -34,6 +29,14 @@ export type AnswerRequest = {
 
   /** Previous messages in the conversation */
   previousMessages?: Message[];
+};
+
+/**
+ * Request payload for generating an AI response
+ */
+export type AnswerRequest = AnswerRequestOptions & {
+  /** The user's message or question to process */
+  message: string;
 };
 
 /**
