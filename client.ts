@@ -2,7 +2,12 @@
  * Thred API Client
  */
 
-import type { ThredConfig, AnswerRequest, AnswerResponse } from "./types";
+import type {
+  ThredConfig,
+  AnswerRequest,
+  AnswerResponse,
+  Targets,
+} from "./types";
 import { handleApiError, NetworkError, TimeoutError } from "./errors";
 
 /**
@@ -72,7 +77,10 @@ export class ThredClient {
    * @param request - The answer request payload
    * @returns Promise resolving to the answer response
    */
-  async answer(request: AnswerRequest): Promise<AnswerResponse> {
+  async answer(
+    request: AnswerRequest,
+    targets?: Targets
+  ): Promise<AnswerResponse> {
     if (!request.message || request.message.trim().length === 0) {
       throw new Error("Message is required");
     }
@@ -100,7 +108,24 @@ export class ThredClient {
       await handleApiError(response);
     }
 
-    return response.json();
+    const responseJson = await response.json();
+
+    if (
+      targets &&
+      responseJson &&
+      responseJson.response &&
+      responseJson.metadata &&
+      responseJson.metadata.code
+    ) {
+      this.setResponse(
+        responseJson.response,
+        responseJson.metadata.code,
+        responseJson.metadata.link,
+        targets
+      );
+    }
+
+    return responseJson;
   }
 
   /**
@@ -111,7 +136,8 @@ export class ThredClient {
    */
   async answerStream(
     request: AnswerRequest,
-    onChunk: (accumulatedText: string) => void
+    onChunk: (accumulatedText: string) => void,
+    targets?: Targets
   ): Promise<AnswerResponse | null> {
     if (!request.message || request.message.trim().length === 0) {
       throw new Error("Message is required");
@@ -149,7 +175,7 @@ export class ThredClient {
     const decoder = new TextDecoder();
     let buffer = "";
     let accumulatedText = "";
-    let metadata: AnswerResponse | null = null;
+    let result: AnswerResponse | null = null;
 
     try {
       while (true) {
@@ -174,7 +200,7 @@ export class ThredClient {
           // Extract and parse metadata
           const metadataStr = buffer.substring(metadataIndex + 2);
           try {
-            metadata = JSON.parse(metadataStr);
+            result = JSON.parse(metadataStr);
           } catch (e) {
             // If metadata isn't complete yet, continue reading
             continue;
@@ -204,7 +230,7 @@ export class ThredClient {
 
           if (metadataPart) {
             try {
-              metadata = JSON.parse(metadataPart);
+              result = JSON.parse(metadataPart);
             } catch {
               // If it's not valid JSON, treat it as text
               accumulatedText += "\n\n" + metadataPart;
@@ -220,7 +246,75 @@ export class ThredClient {
       reader.releaseLock();
     }
 
-    return metadata;
+    if (targets && result && result.metadata && result.metadata.code) {
+      this.setResponse(
+        result.response,
+        result.metadata.code,
+        result.metadata.link,
+        targets
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Set the response in the target element
+   * @param text - The text to set in the target element
+   * @param code - The code to set in the target element
+   * @param link - The link to set in the target element
+   * @param targets - The targets to set the response in
+   */
+  async setResponse(
+    text: string,
+    code: string,
+    link?: string,
+    targets?: Targets
+  ) {
+    if (targets) {
+      if (targets.text) {
+        var textElement: HTMLElement | null = null;
+
+        if (targets?.text instanceof HTMLElement) {
+          textElement = targets.text;
+        } else {
+          textElement = document.getElementById(targets.text || "");
+        }
+        if (textElement) {
+          textElement.innerHTML = text;
+        }
+      }
+      if (targets.link) {
+        var linkElement: HTMLElement | null = null;
+
+        if (targets?.link instanceof HTMLElement) {
+          linkElement = targets.link;
+        } else {
+          linkElement = document.getElementById(targets.link || "");
+        }
+        if (linkElement && link) {
+          linkElement.innerHTML = link;
+        }
+      }
+    }
+
+    if (text && code) {
+      const url = `${this.baseUrl}/impressions/register`;
+      const response = await this.fetchWithTimeout(
+        url,
+        {
+          method: "POST",
+          headers: this.getHeaders(),
+          body: JSON.stringify({ text, code }),
+        },
+        this.timeout
+      );
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      return response.json();
+    }
   }
 
   /**

@@ -47,6 +47,16 @@ export type Message = {
 };
 
 /**
+ * Target elements for the response
+ */
+export type Targets = {
+  /** The text to set in the target element */
+  text?: string | HTMLElement;
+  /** The link to set in the target element */
+  link?: string | HTMLElement;
+};
+
+/**
  * Response from the AI generation endpoint
  */
 export type AnswerResponse = {
