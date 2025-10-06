@@ -12,6 +12,7 @@ export { ThredClient } from "./client";
 export type {
   ThredConfig,
   AnswerRequest,
+  AnswerRequestOptions,
   AnswerResponse,
   BrandInfo,
   Targets,
