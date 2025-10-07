@@ -13,6 +13,8 @@ export type BrandInfo = {
   name: string;
   /** Domain of the brand's website */
   domain: string;
+  /** Image of the brand */
+  image: string;
 } | null;
 
 export type AnswerRequestOptions = {
